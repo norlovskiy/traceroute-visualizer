@@ -33,14 +33,15 @@ def send_series(
     num_series: int,
     active_probes: dict,
     *,
-    dst_port: int = 33434,
+    udp_port: int = 33434,
+    tcp_port: int = 80,
     inter_packet_delay: float = 0.05,
     packet_size: int = 60,
 ):
     for _ in range(num_series):
         # UDP
         src_port_udp = random.randint(49152, 65535)
-        pkt = craft_udp_probe(destination_ip, current_ttl, dst_port, src_port_udp, packet_size)
+        pkt = craft_udp_probe(destination_ip, current_ttl, udp_port, src_port_udp, packet_size)
         t = time.time()
         send(pkt)
         active_probes[("udp", src_port_udp)] = {
@@ -48,14 +49,14 @@ def send_series(
             "sent_at": t,
             "ttl": current_ttl,
             "dst_ip": destination_ip,
-            "dst_port": dst_port,
+            "dst_port": udp_port,
             "src_port": src_port_udp,
         }
         time.sleep(inter_packet_delay)
 
         # TCP
         src_port_tcp = random.randint(49152, 65535)
-        pkt = craft_tcp_probe(destination_ip, current_ttl, dst_port, src_port_tcp)
+        pkt = craft_tcp_probe(destination_ip, current_ttl, tcp_port, src_port_tcp)
         t = time.time()
         send(pkt)
         active_probes[("tcp", src_port_tcp)] = {
@@ -63,7 +64,7 @@ def send_series(
             "sent_at": t,
             "ttl": current_ttl,
             "dst_ip": destination_ip,
-            "dst_port": dst_port,
+            "dst_port": tcp_port,
             "src_port": src_port_tcp,
         }
         time.sleep(inter_packet_delay)
@@ -87,24 +88,28 @@ def send_series(
 if __name__ == "__main__":
     import pprint
 
-    TARGET_IP = "1.1.1.1"
-    TTL = 5
-    NUM_SERIES = 3
-    DST_PORT = 33434
-    INTER_PACKET_DELAY = 0.05
-    PACKET_SIZE = 60
+    TARGET_IP          = "1.1.1.1"
+    NUM_SERIES         = 1      # -q
+    INITIAL_TTL        = 1      # -f
+    MAX_TTL            = 30     # -m
+    UDP_PORT           = 33434  # -p
+    TCP_PORT           = 80
+    PACKET_SIZE        = 60     # -s
+    INTER_PACKET_DELAY = 0.05   # -w
 
     init_sender()
     active_probes = {}
-    send_series(
-        TARGET_IP,
-        TTL,
-        NUM_SERIES,
-        active_probes,
-        dst_port=DST_PORT,
-        inter_packet_delay=INTER_PACKET_DELAY,
-        packet_size=PACKET_SIZE,
-    )
+    for ttl in range(INITIAL_TTL, MAX_TTL + 1):
+        send_series(
+            TARGET_IP,
+            ttl,
+            NUM_SERIES,
+            active_probes,
+            udp_port=UDP_PORT,
+            tcp_port=TCP_PORT,
+            inter_packet_delay=INTER_PACKET_DELAY,
+            packet_size=PACKET_SIZE,
+        )
 
     print(f"\nActive Probe Table ({len(active_probes)} entries):")
     pprint.pprint(active_probes)

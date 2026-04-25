@@ -82,7 +82,7 @@ def parse_icmp_response(raw_data, recv_time, router_ip):
             icmp_sequence   = struct.unpack("!H", raw_data[inner_transport + 6:inner_transport + 8])[0]
 
         else:
-            return[]
+            return
 
         # ---------------- Probe matching ----------------
         if proto_name == "icmp":

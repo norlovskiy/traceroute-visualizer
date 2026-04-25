@@ -254,20 +254,24 @@ def build_hop_entry(ttl: int, proto: str, entry: dict) -> dict:
     """
     Calculate aggregate stats from the raw samples list and return
     the final dict for one (ttl, protocol) entry.
+    DNS lookup happens here, after all packets are captured, so it never
+    blocks the sniffer's hot path.
     """
-    samples = entry["samples"]
-    valid   = [s for s in samples if s is not None]
-
+    samples  = entry["samples"]
+    valid    = [s for s in samples if s is not None]
     avg_rtt  = round(sum(valid) / len(valid), 2) if valid else None
     loss_pct = round(samples.count(None) / len(samples) * 100, 1) if samples else 100.0
 
+    router_ip = entry["router_ip"]
+    hostname  = pr.resolve_hostname(router_ip) if router_ip != "*" else "*"
+
     return {
-        "hop":      ttl,
-        "protocol": proto,
-        "ip":       entry["router_ip"],
-        "hostname": entry["hostname"],
+        "hop":        ttl,
+        "protocol":   proto,
+        "ip":         router_ip,
+        "hostname":   hostname,
         "avg_rtt_ms": avg_rtt,
-        "loss_pct": loss_pct,
+        "loss_pct":   loss_pct,
     }
 
 

@@ -2,7 +2,9 @@ import socket
 import time
 import threading
 
-from scapy.all import AsyncSniffer, IP, ICMP, UDP, TCP, IPerror, UDPerror, TCPerror, ICMPerror, conf
+import struct
+
+from scapy.all import AsyncSniffer, IP, ICMP, UDP, TCP, IPerror, UDPerror, TCPerror, ICMPerror, Raw, conf
 
 conf.verb = 0
 
@@ -47,6 +49,21 @@ def _on_icmp_packet(pkt):
             key = ("tcp", transport.sport)
         elif isinstance(transport, ICMP): # ICMPerror is a subclass of ICMP
             key = ("icmp", transport.seq)
+        elif isinstance(transport, Raw):
+            # Scapy couldn't reassemble inner transport — parse bytes manually.
+            # RFC 792: ICMP error payload contains original IP header + first 8
+            # bytes of original datagram. Those 8 bytes are enough for src_port
+            # (UDP/TCP bytes 0–1) or ICMP seq (bytes 6–7).
+            raw = bytes(transport)
+            proto = inner.proto
+            if proto == 17 and len(raw) >= 2:
+                key = ("udp", struct.unpack("!H", raw[:2])[0])
+            elif proto == 6 and len(raw) >= 2:
+                key = ("tcp", struct.unpack("!H", raw[:2])[0])
+            elif proto == 1 and len(raw) >= 8:
+                key = ("icmp", struct.unpack("!H", raw[6:8])[0])
+            else:
+                return
         else:
             return
 
@@ -62,16 +79,16 @@ def _on_icmp_packet(pkt):
     if probe is None:
         return
 
-    proto   = key[0]
-    rtt_ms  = round((recv_time - probe["sent_at"]) * 1000, 2)
-    hostname = resolve_hostname(router_ip)
-    dest    = probe["dst_ip"]
-    ttl     = probe["ttl"]
+    proto  = key[0]
+    rtt_ms = round((recv_time - probe["sent_at"]) * 1000, 2)
+    dest   = probe["dst_ip"]
+    ttl    = probe["ttl"]
 
     with results_lock:
         ttl_entry = results.setdefault(dest, {}).setdefault(ttl, {})
         if proto not in ttl_entry:
-            ttl_entry[proto] = {"router_ip": router_ip, "hostname": hostname, "samples": []}
+            # hostname left as None; resolved later in build_hop_entry
+            ttl_entry[proto] = {"router_ip": router_ip, "hostname": None, "samples": []}
         ttl_entry[proto]["samples"].append(rtt_ms)
 
     if icmp.type == 0 and router_ip == dest:
@@ -132,9 +149,10 @@ def start_receiver(timeout_sec: float = 3.0):
     threading.Thread(target=_listen, daemon=True).start()
     threading.Thread(target=reap_timed_out_probes, daemon=True).start()
 
-    # Block until AsyncSniffer fires started_callback, guaranteeing the socket
-    # is open before the first probe is sent.
+    # Block until AsyncSniffer fires started_callback (socket open + BPF applied),
+    # then a short sleep ensures the recv loop is entered before the first probe.
     _sniffer_ready.wait(timeout=5.0)
+    time.sleep(0.1)
 
 
 def clear_target(dst_ip: str):

@@ -4,15 +4,15 @@ import struct
 import threading
 
 # ---------------- Shared state -----------------
-active_probes = {}
+active_probes = {} # for B
 probe_lock = threading.Lock()
-results = {}
+results = {} # for A
 results_lock = threading.Lock()
 
 destination_reached = set()
 
 # ---------------- DNS helper ----------------
-def resolve_hostname(ip):
+def resolve_hostname(ip): #trys to get domain name via reverse dns lookup
     try:
         return socket.gethostbyaddr(ip)[0]
     except (socket.herror, socket.gaierror):
@@ -175,12 +175,3 @@ def create_listening_socket():
 #             "icmp_id": _ICMP_ID,
 #             "seq": seq,
 # }
-
-# UDP Probes: Set Source Port = a unique ID (e.g., 50001, 50002...).
-#
-# TCP Probes: Set Source Port = a unique ID.
-#
-# ICMP Probes: Set ICMP ID and ICMP Sequence to values we can track.
-#
-# Registration: Every time you call send(), you must immediately lock probe_lock and add the entry to active_probes using
-# these keys, or I won't be able to match the reply.

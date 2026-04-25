@@ -117,7 +117,7 @@ def parse_icmp_response(raw_data, recv_time, router_ip):
             destination_reached.add(dest)
 
         # TCP final destination usually responds with TCP SYN-ACK or RST,
-        # not ICMP, so we do not mark TCP complete here.
+        # not ICMP, so do not mark TCP complete here.
 
     except Exception as e:
         print(f"Parser error: {e}")

@@ -39,49 +39,46 @@ def send_series(
     packet_size: int = 60,
 ):
     for _ in range(num_series):
-        # UDP
+        # UDP — register before send so a sub-ms LAN reply never races the table write
         src_port_udp = random.randint(49152, 65535)
         pkt = craft_udp_probe(destination_ip, current_ttl, udp_port, src_port_udp, packet_size)
-        t = time.time()
-        send(pkt)
         active_probes[("udp", src_port_udp)] = {
             "protocol": "udp",
-            "sent_at": t,
+            "sent_at": time.time(),
             "ttl": current_ttl,
             "dst_ip": destination_ip,
             "dst_port": udp_port,
             "src_port": src_port_udp,
         }
+        send(pkt)
         time.sleep(inter_packet_delay)
 
         # TCP
         src_port_tcp = random.randint(49152, 65535)
         pkt = craft_tcp_probe(destination_ip, current_ttl, tcp_port, src_port_tcp)
-        t = time.time()
-        send(pkt)
         active_probes[("tcp", src_port_tcp)] = {
             "protocol": "tcp",
-            "sent_at": t,
+            "sent_at": time.time(),
             "ttl": current_ttl,
             "dst_ip": destination_ip,
             "dst_port": tcp_port,
             "src_port": src_port_tcp,
         }
+        send(pkt)
         time.sleep(inter_packet_delay)
 
         # ICMP
         seq = next(_seq_counter)
         pkt = craft_icmp_probe(destination_ip, current_ttl, seq, packet_size)
-        t = time.time()
-        send(pkt)
         active_probes[("icmp", seq)] = {
             "protocol": "icmp",
-            "sent_at": t,
+            "sent_at": time.time(),
             "ttl": current_ttl,
             "dst_ip": destination_ip,
             "icmp_id": _ICMP_ID,
             "seq": seq,
         }
+        send(pkt)
         time.sleep(inter_packet_delay)
 
 

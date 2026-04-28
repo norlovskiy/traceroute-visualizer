@@ -35,18 +35,18 @@ def _on_icmp_packet(pkt):
     router_ip = pkt[IP].src
     icmp = pkt[ICMP]
 
-    print(f"[DBG] pkt  from={router_ip}  icmp_type={icmp.type}  icmp_code={icmp.code}", flush=True)
+    #print(f"[DBG] pkt  from={router_ip}  icmp_type={icmp.type}  icmp_code={icmp.code}", flush=True)
 
     if icmp.type in (3, 11):
         # ICMP error — payload is IPerror (subclass of IP); use isinstance not haslayer
         # because haslayer() uses == not isinstance and misses subclasses.
         inner = icmp.payload
         if not isinstance(inner, IP):  # IPerror (real captures) and IP (tests) both match
-            print(f"[DBG] DROP  no inner IP layer, payload type={type(inner).__name__}", flush=True)
+            #print(f"[DBG] DROP  no inner IP layer, payload type={type(inner).__name__}", flush=True)
             return
 
         transport = inner.payload
-        print(f"[DBG] inner  proto={inner.proto}  transport_type={type(transport).__name__}", flush=True)
+        #print(f"[DBG] inner  proto={inner.proto}  transport_type={type(transport).__name__}", flush=True)
 
         if isinstance(transport, UDP):    # UDPerror is a subclass of UDP
             key = ("udp", transport.sport)
@@ -61,7 +61,7 @@ def _on_icmp_packet(pkt):
             # (UDP/TCP bytes 0–1) or ICMP seq (bytes 6–7).
             raw = bytes(transport)
             proto = inner.proto
-            print(f"[DBG] Raw fallback  inner.proto={proto}  raw_hex={raw[:8].hex()}", flush=True)
+            #print(f"[DBG] Raw fallback  inner.proto={proto}  raw_hex={raw[:8].hex()}", flush=True)
             if proto == 17 and len(raw) >= 2:
                 key = ("udp", struct.unpack("!H", raw[:2])[0])
             elif proto == 6 and len(raw) >= 2:
@@ -69,17 +69,17 @@ def _on_icmp_packet(pkt):
             elif proto == 1 and len(raw) >= 8:
                 key = ("icmp", struct.unpack("!H", raw[6:8])[0])
             else:
-                print(f"[DBG] DROP  Raw but proto={proto} len={len(raw)}", flush=True)
+                #print(f"[DBG] DROP  Raw but proto={proto} len={len(raw)}", flush=True)
                 return
         else:
-            print(f"[DBG] DROP  unhandled transport type={type(transport).__name__}", flush=True)
+            #print(f"[DBG] DROP  unhandled transport type={type(transport).__name__}", flush=True)
             return
 
     elif icmp.type == 0:
         # Echo Reply — sequence directly identifies the probe
         key = ("icmp", icmp.seq)
     else:
-        print(f"[DBG] DROP  unhandled icmp_type={icmp.type}", flush=True)
+        #print(f"[DBG] DROP  unhandled icmp_type={icmp.type}", flush=True)
         return
 
     with probe_lock:
@@ -87,10 +87,10 @@ def _on_icmp_packet(pkt):
         active_keys_snapshot = list(active_probes.keys()) if probe is None else None
 
     if probe is None:
-        print(f"[DBG] MISS  key={key}  active_probes={active_keys_snapshot}", flush=True)
+        #print(f"[DBG] MISS  key={key}  active_probes={active_keys_snapshot}", flush=True)
         return
 
-    print(f"[DBG] HIT   key={key}  ttl={probe['ttl']}  dst={probe['dst_ip']}", flush=True)
+    #print(f"[DBG] HIT   key={key}  ttl={probe['ttl']}  dst={probe['dst_ip']}", flush=True)
 
     proto  = key[0]
     rtt_ms = round((recv_time - probe["sent_at"]) * 1000, 2)

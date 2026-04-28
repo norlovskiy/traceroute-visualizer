@@ -327,14 +327,9 @@ def launch_visualizer(results: dict, json_path: Path) -> None:
 
     viz_path = json_path.with_suffix(".html").resolve()
     viz_path.write_text(html, encoding="utf-8")
-    uri = viz_path.as_uri()
-    sudo_user = os.environ.get("SUDO_USER")
-    if not sudo_user:
-        webbrowser.open(uri)
-    else:
-        import subprocess
-        subprocess.Popen(["sudo", "-u", sudo_user, "xdg-open", uri])
-    print(f"[+] Visualizer: {viz_path}")
+
+    webbrowser.open(viz_path.as_uri())
+    print(f"[+] Visualizer: {viz_path.resolve()}")
 
 
 # ===========================================================================

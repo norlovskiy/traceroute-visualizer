@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Topology</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --bg2: #0f1520;
+    --bg3: #151d2e;
+    --border: #1e2d45;
+    --text: #c8d8f0;
+    --text-dim: #4a6080;
+    --text-bright: #e8f0ff;
+    --accent: #00d4ff;
+    --udp: #00d4ff;
+    --tcp: #ff6b6b;
+    --icmp: #51cf66;
+    --node-src: #f59f00;
+    --node-router: #339af0;
+    --node-dest: #51cf66;
+    --node-lost: #495057;
+    --glow-udp: rgba(0, 212, 255, 0.3);
+    --glow-tcp: rgba(255, 107, 107, 0.3);
+    --glow-icmp: rgba(81, 207, 102, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--text-dim); font-weight: 300; }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .legend-line {
+    width: 24px;
+    height: 2px;
+    border-radius: 2px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .load-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .load-bar input[type="file"] { display: none; }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  #graph-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 30% 40%, rgba(0,212,255,0.03) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(255,107,107,0.02) 0%, transparent 60%),
+                var(--bg);
+  }
+
+  .grid-line { stroke: var(--border); stroke-width: 0.5; opacity: 0.3; }
+
+  #sidebar {
+    width: 280px;
+    border-left: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .stat-label { color: var(--text-dim); }
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-bright);
+  }
+
+  #node-detail { padding: 16px; }
+
+  .detail-ip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+
+  .detail-hostname {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+
+  .proto-block {
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--border);
+  }
+
+  .proto-block.udp { border-left-color: var(--udp); }
+  .proto-block.tcp { border-left-color: var(--tcp); }
+  .proto-block.icmp { border-left-color: var(--icmp); }
+
+  .proto-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .proto-block.udp .proto-name { color: var(--udp); }
+  .proto-block.tcp .proto-name { color: var(--tcp); }
+  .proto-block.icmp .proto-name { color: var(--icmp); }
+
+  .proto-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .proto-stat-label { color: var(--text-dim); }
+  .proto-stat-value { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .empty-state .icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  .node circle {
+    cursor: pointer;
+    transition: r 0.2s;
+  }
+
+  .node:hover circle { filter: brightness(1.3); }
+
+  .node text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--text);
+    pointer-events: none;
+    text-anchor: middle;
+  }
+
+  .link { fill: none; stroke-linecap: round; }
+
+  .tooltip {
+    position: absolute;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    max-width: 200px;
+    line-height: 1.6;
+  }
+
+  .controls {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .ctrl-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .ttl-badge {
+    position: absolute;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">trace<span>viz</span> // network topology</div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--udp);box-shadow:0 0 4px var(--udp)"></div>UDP
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--tcp);box-shadow:0 0 4px var(--tcp)"></div>TCP
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--icmp);box-shadow:0 0 4px var(--icmp)"></div>ICMP
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--node-src)"></div>Source
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--node-dest)"></div>Destination
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--node-lost);border:1px dashed #666"></div>No reply
+    </div>
+  </div>
+  <div class="load-bar">
+    <button class="btn" onclick="document.getElementById('fileInput').click()">Load results.json</button>
+    <button class="btn" onclick="loadDemo()">Load demo</button>
+    <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
+  </div>
+</header>
+
+<div id="main">
+  <div id="graph-container">
+    <svg id="svg"></svg>
+    <div class="tooltip" id="tooltip"></div>
+    <div class="controls">
+      <div class="ctrl-btn" onclick="zoom(1.3)" title="Zoom in">+</div>
+      <div class="ctrl-btn" onclick="zoom(0.7)" title="Zoom out">−</div>
+      <div class="ctrl-btn" onclick="resetZoom()" title="Reset">⌂</div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Summary</div>
+      <div class="stat-row"><span class="stat-label">Destinations</span><span class="stat-value" id="s-dests">—</span></div>
+      <div class="stat-row"><span class="stat-label">Unique hops</span><span class="stat-value" id="s-hops">—</span></div>
+      <div class="stat-row"><span class="stat-label">Avg RTT (UDP)</span><span class="stat-value" id="s-udp">—</span></div>
+      <div class="stat-row"><span class="stat-label">Avg RTT (TCP)</span><span class="stat-value" id="s-tcp">—</span></div>
+      <div class="stat-row"><span class="stat-label">Avg RTT (ICMP)</span><span class="stat-value" id="s-icmp">—</span></div>
+      <div class="stat-row"><span class="stat-label">Packet loss</span><span class="stat-value" id="s-loss">—</span></div>
+    </div>
+    <div id="node-detail">
+      <div class="empty-state">
+        <div class="icon">◎</div>
+        Load a results.json file or click demo to visualize your traceroute data.<br><br>
+        Click any node to inspect hop details.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROTOCOLS = ["udp", "tcp", "icmp"];
+const PROTO_COLORS = { udp: "#00d4ff", tcp: "#ff6b6b", icmp: "#51cf66" };
+
+let simulation, svgEl, gEl, zoomBehavior;
+let currentData = null;
+
+// ── Demo data ──────────────────────────────────────────────────────────────
+const DEMO = {
+  "8.8.8.8": {
+    "1":  { udp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.2},  tcp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.5},  icmp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.1} },
+    "2":  { udp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.3},  tcp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:9.1},  icmp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.0} },
+    "3":  { udp: {router_ip:"*",           hostname:"*",              rtt_ms:null}, tcp: {router_ip:"*",           hostname:"*",              rtt_ms:null}, icmp: {router_ip:"*",           hostname:"*",              rtt_ms:null} },
+    "4":  { udp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:12.4}, tcp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:13.1}, icmp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:12.0} },
+    "5":  { udp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:14.2}, tcp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:15.0}, icmp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:13.9} }
+  },
+  "1.1.1.1": {
+    "1":  { udp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.2},  tcp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.4},  icmp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.0} },
+    "2":  { udp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.5},  tcp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:9.3},  icmp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.1} },
+    "3":  { udp: {router_ip:"104.16.0.1",  hostname:"cloudflare-bb",  rtt_ms:10.2}, tcp: {router_ip:"104.16.0.1",  hostname:"cloudflare-bb",  rtt_ms:11.0}, icmp: {router_ip:"*",           hostname:"*",              rtt_ms:null} },
+    "4":  { udp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:11.8}, tcp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:12.5}, icmp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:11.5} }
+  }
+};
+
+// ── Normalise a single probe entry to a common shape ──────────────────────
+// Handles both formats:
+//   Old: { router_ip, hostname, rtt_ms }
+//   New: { ip, hostname, avg_rtt_ms, loss_pct }
+function normaliseProbe(p) {
+  if (!p) return null;
+  return {
+    ip:       p.ip       ?? p.router_ip ?? "*",
+    hostname: p.hostname ?? "*",
+    rtt_ms:   p.avg_rtt_ms  ?? p.rtt_ms  ?? null,
+    loss_pct: p.loss_pct ?? (p.rtt_ms === null ? 100 : 0),
+  };
+}
+
+// ── Build graph data from results dict ─────────────────────────────────────
+function buildGraph(data) {
+  const nodes = new Map();
+  const links = [];
+
+  const SOURCE_IP = "source";
+  nodes.set(SOURCE_IP, { id: SOURCE_IP, label: "SOURCE", hostname: "your machine", type: "source", ttl: 0, protos: {}, loss: {} });
+
+  for (const [dest, hops] of Object.entries(data)) {
+    const sortedTTLs = Object.keys(hops).map(Number).sort((a,b) => a-b);
+    let prevIp = SOURCE_IP;
+
+    for (const ttl of sortedTTLs) {
+      const hopData = hops[ttl];
+      // Pick representative IP (prefer non-lost)
+      let hopIp = "*_" + dest + "_" + ttl;
+      let hostname = "*";
+      let isLost = true;
+
+      for (const proto of PROTOCOLS) {
+        const p = normaliseProbe(hopData[proto]);
+        if (p && p.ip && p.ip !== "*") {
+          hopIp = p.ip;
+          hostname = p.hostname || p.ip;
+          isLost = false;
+          break;
+        }
+      }
+
+      if (!nodes.has(hopIp)) {
+        nodes.set(hopIp, {
+          id: hopIp, label: hopIp, hostname,
+          type: isLost ? "lost" : (hopIp === dest ? "dest" : "router"),
+          ttl, protos: {}, loss: {},
+          destinations: new Set()
+        });
+      }
+
+      const node = nodes.get(hopIp);
+      node.destinations = node.destinations || new Set();
+      node.destinations.add(dest);
+
+      // Store per-proto RTT and loss
+      for (const proto of PROTOCOLS) {
+        const p = normaliseProbe(hopData[proto]);
+        if (p && p.rtt_ms !== null && p.rtt_ms !== undefined) {
+          if (!node.protos[proto]) node.protos[proto] = [];
+          node.protos[proto].push(p.rtt_ms);
+        }
+        if (p) {
+          if (!node.loss[proto]) node.loss[proto] = [];
+          node.loss[proto].push(p.loss_pct ?? 0);
+        }
+      }
+
+      // Create a link per protocol
+      for (const proto of PROTOCOLS) {
+        const p = normaliseProbe(hopData[proto]);
+        const rtt  = p ? p.rtt_ms   : null;
+        const lost = !p || p.ip === "*" || rtt === null;
+
+        links.push({
+          source: prevIp,
+          target: hopIp,
+          proto,
+          rtt,
+          lost,
+          dest,
+          ttl
+        });
+      }
+
+      prevIp = hopIp;
+    }
+  }
+
+  // Deduplicate links by source+target+proto (keep min RTT)
+  const linkMap = new Map();
+  for (const l of links) {
+    const k = `${l.source}|${l.target}|${l.proto}`;
+    if (!linkMap.has(k) || (!linkMap.get(k).rtt && l.rtt)) {
+      linkMap.set(k, l);
+    }
+  }
+
+  return { nodes: [...nodes.values()], links: [...linkMap.values()] };
+}
+
+// ── Stats ───────────────────────────────────────────────────────────────────
+function updateStats(data, nodes) {
+  const dests = Object.keys(data).length;
+  const hops  = nodes.filter(n => n.type === "router" || n.type === "dest").length;
+
+  const rtts = { udp:[], tcp:[], icmp:[] };
+  let totalLoss = [], probeCount = 0;
+
+  for (const n of nodes) {
+    for (const proto of PROTOCOLS) {
+      if (n.protos[proto]) rtts[proto].push(...n.protos[proto]);
+      if (n.loss && n.loss[proto]) totalLoss.push(...n.loss[proto]);
+      if (n.type !== "source") probeCount++;
+    }
+  }
+
+  const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1)+"ms" : "—";
+  const avgLoss = totalLoss.length ? (totalLoss.reduce((a,b)=>a+b,0)/totalLoss.length).toFixed(0)+"%" : "—";
+  document.getElementById("s-dests").textContent = dests;
+  document.getElementById("s-hops").textContent  = hops;
+  document.getElementById("s-udp").textContent   = avg(rtts.udp);
+  document.getElementById("s-tcp").textContent   = avg(rtts.tcp);
+  document.getElementById("s-icmp").textContent  = avg(rtts.icmp);
+  document.getElementById("s-loss").textContent  = avgLoss;
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(data) {
+  currentData = data;
+  const { nodes, links } = buildGraph(data);
+  updateStats(data, nodes);
+
+  const container = document.getElementById("graph-container");
+  const W = container.clientWidth, H = container.clientHeight;
+
+  d3.select("#svg").selectAll("*").remove();
+  svgEl = d3.select("#svg");
+
+  zoomBehavior = d3.zoom().scaleExtent([0.1, 4]).on("zoom", e => {
+    gEl.attr("transform", e.transform);
+  });
+  svgEl.call(zoomBehavior);
+
+  gEl = svgEl.append("g");
+
+  // Faint grid
+  const gridG = gEl.append("g").attr("class","grid");
+  for (let x = -2000; x < 3000; x += 80)
+    gridG.append("line").attr("class","grid-line").attr("x1",x).attr("x2",x).attr("y1",-2000).attr("y2",3000);
+  for (let y = -2000; y < 3000; y += 80)
+    gridG.append("line").attr("class","grid-line").attr("x1",-2000).attr("x2",3000).attr("y1",y).attr("y2",y);
+
+  // RTT → link length (longer RTT = longer link distance)
+  const allRtts = links.map(l=>l.rtt).filter(Boolean);
+  const rttScale = d3.scaleLinear()
+    .domain([0, d3.max(allRtts) || 100])
+    .range([60, 220]);
+
+  // Loss rate → link thickness (more loss = thinner)
+  const thicknessScale = d3.scaleLinear().domain([0,1]).range([3, 0.5]);
+
+  // Per-protocol offset so 3 links between same nodes are visible
+  const protoOffset = { udp: -5, tcp: 0, icmp: 5 };
+
+  // Links
+  const linkG = gEl.append("g");
+  const linkSel = linkG.selectAll("line")
+    .data(links)
+    .join("line")
+    .attr("class","link")
+    .attr("stroke", d => PROTO_COLORS[d.proto])
+    .attr("stroke-width", d => d.lost ? 0.5 : thicknessScale(0))
+    .attr("stroke-opacity", d => d.lost ? 0.15 : 0.7)
+    .attr("stroke-dasharray", d => d.lost ? "4 4" : null)
+    .style("filter", d => d.lost ? null : `drop-shadow(0 0 3px ${PROTO_COLORS[d.proto]}66)`);
+
+  // Nodes
+  const nodeRadius = n => n.type === "source" ? 14 : n.type === "dest" ? 12 : n.type === "lost" ? 7 : 9;
+  const nodeColor  = n => ({source:"#f59f00", dest:"#51cf66", lost:"#2d3748", router:"#339af0"})[n.type];
+
+  const nodeG = gEl.append("g");
+  const nodeSel = nodeG.selectAll("g")
+    .data(nodes)
+    .join("g")
+    .attr("class","node")
+    .call(d3.drag()
+      .on("start", (e,d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on("drag",  (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on("end",   (e,d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
+    )
+    .on("click", (e, d) => showDetail(d))
+    .on("mouseover", (e, d) => {
+      const t = document.getElementById("tooltip");
+      const avgRtt = proto => {
+        const arr = d.protos[proto];
+        return arr && arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1)+"ms" : "—";
+      };
+      t.innerHTML = `<b>${d.label}</b><br>${d.hostname !== d.label ? d.hostname+"<br>" : ""}UDP: ${avgRtt("udp")} &nbsp; TCP: ${avgRtt("tcp")} &nbsp; ICMP: ${avgRtt("icmp")}`;
+      t.style.opacity = 1;
+      t.style.left = (e.pageX + 12) + "px";
+      t.style.top  = (e.pageY - 10) + "px";
+    })
+    .on("mousemove", e => {
+      const t = document.getElementById("tooltip");
+      t.style.left = (e.pageX + 12) + "px";
+      t.style.top  = (e.pageY - 10) + "px";
+    })
+    .on("mouseout", () => { document.getElementById("tooltip").style.opacity = 0; });
+
+  nodeSel.append("circle")
+    .attr("r", nodeRadius)
+    .attr("fill", nodeColor)
+    .attr("stroke", d => d.type === "lost" ? "#4a5568" : nodeColor(d))
+    .attr("stroke-width", d => d.type === "lost" ? 1 : 2)
+    .attr("stroke-dasharray", d => d.type === "lost" ? "3 2" : null)
+    .style("filter", d => d.type !== "lost" ? `drop-shadow(0 0 6px ${nodeColor(d)}88)` : null);
+
+  nodeSel.append("text")
+    .attr("dy", d => nodeRadius(d) + 13)
+    .text(d => d.type === "lost" ? "* no reply" : d.label)
+    .attr("fill", d => d.type === "lost" ? "#4a5568" : "#c8d8f0");
+
+  // Simulation
+  simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d=>d.id)
+      .distance(d => d.rtt ? rttScale(d.rtt) : 80)
+      .strength(0.4))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(W/2, H/2))
+    .force("collision", d3.forceCollide(30))
+    .on("tick", () => {
+      linkSel
+        .attr("x1", d => d.source.x + protoOffset[d.proto])
+        .attr("y1", d => d.source.y + protoOffset[d.proto])
+        .attr("x2", d => d.target.x + protoOffset[d.proto])
+        .attr("y2", d => d.target.y + protoOffset[d.proto]);
+      nodeSel.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+  // Pin source in center-left
+  const srcNode = nodes.find(n => n.type === "source");
+  if (srcNode) { srcNode.fx = W * 0.15; srcNode.fy = H / 2; }
+}
+
+// ── Node detail panel ────────────────────────────────────────────────────────
+function showDetail(d) {
+  const panel = document.getElementById("node-detail");
+  const avg = arr => arr && arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : null;
+  const loss = arr => arr && arr.length ? "0%" : "100%";
+
+  let html = `<div class="detail-ip">${d.label}</div>
+              <div class="detail-hostname">${d.hostname !== d.label ? d.hostname : "no hostname"}</div>`;
+
+  if (d.type === "source") {
+    html += `<div style="font-size:12px;color:var(--text-dim)">Trace origin node.</div>`;
+  } else {
+    for (const proto of PROTOCOLS) {
+      const rttArr  = d.protos[proto];
+      const lossArr = d.loss  && d.loss[proto];
+      const rtt     = avg(rttArr);
+      const lossVal = lossArr && lossArr.length
+        ? (lossArr.reduce((a,b)=>a+b,0)/lossArr.length).toFixed(0)+"%"
+        : (rttArr && rttArr.length ? "0%" : "100%");
+      html += `<div class="proto-block ${proto}">
+        <div class="proto-name">${proto.toUpperCase()}</div>
+        <div class="proto-stat"><span class="proto-stat-label">Avg RTT</span><span class="proto-stat-value">${rtt ? rtt+"ms" : "—"}</span></div>
+        <div class="proto-stat"><span class="proto-stat-label">Loss</span><span class="proto-stat-value">${lossVal}</span></div>
+      </div>`;
+    }
+    if (d.destinations && d.destinations.size) {
+      html += `<div style="margin-top:10px;font-size:11px;color:var(--text-dim)">Seen on path to:<br>`;
+      for (const dest of d.destinations) html += `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent)">${dest}</span><br>`;
+      html += `</div>`;
+    }
+  }
+
+  panel.innerHTML = html;
+}
+
+// ── Zoom helpers ─────────────────────────────────────────────────────────────
+function zoom(factor) {
+  svgEl.transition().duration(300).call(zoomBehavior.scaleBy, factor);
+}
+
+function resetZoom() {
+  svgEl.transition().duration(400).call(zoomBehavior.transform, d3.zoomIdentity);
+}
+
+// ── File loader ───────────────────────────────────────────────────────────────
+function loadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      render(data);
+    } catch(err) {
+      alert("Invalid JSON: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function loadDemo() { render(DEMO); }
+
+// Auto-load demo on start
+window.addEventListener("load", () => loadDemo());
+</script>
+</body>
+</html>

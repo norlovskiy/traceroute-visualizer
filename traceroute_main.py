@@ -17,6 +17,7 @@ import logging
 import os
 import sys
 import time
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Iterator
@@ -132,6 +133,12 @@ Examples
         action="store_true",
         default=False,
         help="Enable verbose logging to stderr.",
+    )
+    parser.add_argument(
+        "--open",
+        action="store_true",
+        default=False,
+        help="Open the topology visualizer in the browser after the run.",
     )
 
     return parser
@@ -290,7 +297,43 @@ def build_json_result(target_ip: str, hop_data: dict) -> dict:
 
 
 # ===========================================================================
-# 4. PROBE LOOP
+# 4. VISUALIZER
+# ===========================================================================
+
+_TOPOLOGY_TEMPLATE = Path(__file__).parent / "topology (1).html"
+_AUTOLOAD_MARKER   = 'window.addEventListener("load", () => {});'
+
+
+def launch_visualizer(results: dict, json_path: Path) -> None:
+    """Embed results into the topology HTML and open it in the default browser.
+
+    Writes <json_stem>.html alongside the JSON file so it can be reopened later.
+    """
+    if not _TOPOLOGY_TEMPLATE.exists():
+        logging.warning("Topology template not found: %s", _TOPOLOGY_TEMPLATE)
+        return
+
+    html = _TOPOLOGY_TEMPLATE.read_text(encoding="utf-8")
+
+    if _AUTOLOAD_MARKER not in html:
+        logging.warning("Topology template format changed — could not inject data.")
+        return
+
+    injected = (
+        f"const LIVE_DATA = {json.dumps(results)};\n"
+        f'window.addEventListener("load", () => render(LIVE_DATA));'
+    )
+    html = html.replace(_AUTOLOAD_MARKER, injected)
+
+    viz_path = json_path.with_suffix(".html")
+    viz_path.write_text(html, encoding="utf-8")
+
+    webbrowser.open(viz_path.as_uri())
+    print(f"[+] Visualizer: {viz_path.resolve()}")
+
+
+# ===========================================================================
+# 5. PROBE LOOP
 # ===========================================================================
 
 def trace_target(target_ip: str, args: argparse.Namespace) -> dict:
@@ -376,6 +419,10 @@ def main() -> int:
         return 1
 
     print(f"\n[+] Done. Results written to {out_path.resolve()} ({len(targets)} target(s) processed).")
+
+    if args.open:
+        launch_visualizer(all_results, out_path)
+
     return exit_code
 
 

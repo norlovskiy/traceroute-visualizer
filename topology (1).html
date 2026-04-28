@@ -338,8 +338,7 @@
     </div>
   </div>
   <div class="load-bar">
-    <button class="btn" onclick="document.getElementById('fileInput').click()">Load results.json</button>
-    <button class="btn" onclick="loadDemo()">Load demo</button>
+    <button class="btn primary" onclick="document.getElementById('fileInput').click()">Load results.json</button>
     <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
   </div>
 </header>
@@ -381,23 +380,6 @@ const PROTO_COLORS = { udp: "#00d4ff", tcp: "#ff6b6b", icmp: "#51cf66" };
 
 let simulation, svgEl, gEl, zoomBehavior;
 let currentData = null;
-
-// ── Demo data ──────────────────────────────────────────────────────────────
-const DEMO = {
-  "8.8.8.8": {
-    "1":  { udp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.2},  tcp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.5},  icmp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.1} },
-    "2":  { udp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.3},  tcp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:9.1},  icmp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.0} },
-    "3":  { udp: {router_ip:"*",           hostname:"*",              rtt_ms:null}, tcp: {router_ip:"*",           hostname:"*",              rtt_ms:null}, icmp: {router_ip:"*",           hostname:"*",              rtt_ms:null} },
-    "4":  { udp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:12.4}, tcp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:13.1}, icmp: {router_ip:"72.14.232.1", hostname:"google-pop",     rtt_ms:12.0} },
-    "5":  { udp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:14.2}, tcp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:15.0}, icmp: {router_ip:"8.8.8.8",     hostname:"dns.google",     rtt_ms:13.9} }
-  },
-  "1.1.1.1": {
-    "1":  { udp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.2},  tcp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.4},  icmp: {router_ip:"192.168.1.1", hostname:"gateway.home",   rtt_ms:1.0} },
-    "2":  { udp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.5},  tcp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:9.3},  icmp: {router_ip:"10.10.0.1",   hostname:"isp-edge-01",    rtt_ms:8.1} },
-    "3":  { udp: {router_ip:"104.16.0.1",  hostname:"cloudflare-bb",  rtt_ms:10.2}, tcp: {router_ip:"104.16.0.1",  hostname:"cloudflare-bb",  rtt_ms:11.0}, icmp: {router_ip:"*",           hostname:"*",              rtt_ms:null} },
-    "4":  { udp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:11.8}, tcp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:12.5}, icmp: {router_ip:"1.1.1.1",     hostname:"one.one.one.one",rtt_ms:11.5} }
-  }
-};
 
 // ── Normalise a single probe entry to a common shape ──────────────────────
 // Handles both formats:
@@ -705,10 +687,7 @@ function loadFile(event) {
   reader.readAsText(file);
 }
 
-function loadDemo() { render(DEMO); }
-
-// Auto-load demo on start
-window.addEventListener("load", () => loadDemo());
+window.addEventListener("load", () => {});
 </script>
 </body>
 </html>

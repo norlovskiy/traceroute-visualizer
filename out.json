@@ -6,7 +6,7 @@
         "protocol": "udp",
         "ip": "10.209.64.1",
         "hostname": "_gateway",
-        "avg_rtt_ms": 30.88,
+        "avg_rtt_ms": 39.96,
         "loss_pct": 0.0
       },
       "tcp": {
@@ -14,7 +14,7 @@
         "protocol": "tcp",
         "ip": "10.209.64.1",
         "hostname": "_gateway",
-        "avg_rtt_ms": 15.56,
+        "avg_rtt_ms": 7.39,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -22,7 +22,7 @@
         "protocol": "icmp",
         "ip": "10.209.64.1",
         "hostname": "_gateway",
-        "avg_rtt_ms": 10.39,
+        "avg_rtt_ms": 14.98,
         "loss_pct": 0.0
       }
     },
@@ -30,17 +30,17 @@
       "udp": {
         "hop": 2,
         "protocol": "udp",
-        "ip": "10.213.33.25",
-        "hostname": "10.213.33.25",
-        "avg_rtt_ms": 19.84,
+        "ip": "10.213.33.33",
+        "hostname": "10.213.33.33",
+        "avg_rtt_ms": 15.21,
         "loss_pct": 0.0
       },
       "tcp": {
         "hop": 2,
         "protocol": "tcp",
-        "ip": "10.213.33.33",
-        "hostname": "10.213.33.33",
-        "avg_rtt_ms": 19.88,
+        "ip": "10.213.33.25",
+        "hostname": "10.213.33.25",
+        "avg_rtt_ms": 21.15,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -48,7 +48,7 @@
         "protocol": "icmp",
         "ip": "10.213.33.25",
         "hostname": "10.213.33.25",
-        "avg_rtt_ms": 14.02,
+        "avg_rtt_ms": 17.26,
         "loss_pct": 0.0
       }
     },
@@ -58,7 +58,7 @@
         "protocol": "udp",
         "ip": "10.213.32.97",
         "hostname": "10.213.32.97",
-        "avg_rtt_ms": 17.98,
+        "avg_rtt_ms": 10.05,
         "loss_pct": 0.0
       },
       "tcp": {
@@ -66,7 +66,7 @@
         "protocol": "tcp",
         "ip": "10.213.32.97",
         "hostname": "10.213.32.97",
-        "avg_rtt_ms": 10.09,
+        "avg_rtt_ms": 9.63,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -74,7 +74,7 @@
         "protocol": "icmp",
         "ip": "10.213.32.97",
         "hostname": "10.213.32.97",
-        "avg_rtt_ms": 17.19,
+        "avg_rtt_ms": 10.24,
         "loss_pct": 0.0
       }
     },
@@ -84,7 +84,7 @@
         "protocol": "udp",
         "ip": "10.213.32.70",
         "hostname": "10.213.32.70",
-        "avg_rtt_ms": 15.19,
+        "avg_rtt_ms": 11.16,
         "loss_pct": 0.0
       },
       "tcp": {
@@ -92,7 +92,7 @@
         "protocol": "tcp",
         "ip": "10.213.32.70",
         "hostname": "10.213.32.70",
-        "avg_rtt_ms": 10.14,
+        "avg_rtt_ms": 10.17,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -100,7 +100,7 @@
         "protocol": "icmp",
         "ip": "10.213.32.70",
         "hostname": "10.213.32.70",
-        "avg_rtt_ms": 19.72,
+        "avg_rtt_ms": 18.22,
         "loss_pct": 0.0
       }
     },
@@ -110,7 +110,7 @@
         "protocol": "udp",
         "ip": "194.223.152.17",
         "hostname": "194.223.152.17",
-        "avg_rtt_ms": 50.54,
+        "avg_rtt_ms": 46.18,
         "loss_pct": 0.0
       },
       "tcp": {
@@ -118,7 +118,7 @@
         "protocol": "tcp",
         "ip": "194.223.152.17",
         "hostname": "194.223.152.17",
-        "avg_rtt_ms": 39.78,
+        "avg_rtt_ms": 49.45,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -126,25 +126,17 @@
         "protocol": "icmp",
         "ip": "194.223.152.17",
         "hostname": "194.223.152.17",
-        "avg_rtt_ms": 39.53,
+        "avg_rtt_ms": 48.36,
         "loss_pct": 0.0
       }
     },
     "6": {
-      "udp": {
-        "hop": 6,
-        "protocol": "udp",
-        "ip": "193.114.182.92",
-        "hostname": "193.114.182.92",
-        "avg_rtt_ms": 42.61,
-        "loss_pct": 0.0
-      },
       "tcp": {
         "hop": 6,
         "protocol": "tcp",
         "ip": "193.114.182.92",
         "hostname": "193.114.182.92",
-        "avg_rtt_ms": 43.05,
+        "avg_rtt_ms": 50.56,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -152,8 +144,16 @@
         "protocol": "icmp",
         "ip": "193.114.182.92",
         "hostname": "193.114.182.92",
-        "avg_rtt_ms": 41.32,
+        "avg_rtt_ms": 51.2,
         "loss_pct": 0.0
+      },
+      "udp": {
+        "hop": 6,
+        "protocol": "udp",
+        "ip": "*",
+        "hostname": "*",
+        "avg_rtt_ms": null,
+        "loss_pct": 100.0
       }
     },
     "7": {
@@ -162,20 +162,20 @@
         "protocol": "udp",
         "ip": "210.171.224.134",
         "hostname": "210.171.224.134",
-        "avg_rtt_ms": 39.32,
-        "loss_pct": 0.0
-      },
-      "icmp": {
-        "hop": 7,
-        "protocol": "icmp",
-        "ip": "210.171.224.134",
-        "hostname": "210.171.224.134",
-        "avg_rtt_ms": 42.44,
+        "avg_rtt_ms": 48.89,
         "loss_pct": 0.0
       },
       "tcp": {
         "hop": 7,
         "protocol": "tcp",
+        "ip": "*",
+        "hostname": "*",
+        "avg_rtt_ms": null,
+        "loss_pct": 100.0
+      },
+      "icmp": {
+        "hop": 7,
+        "protocol": "icmp",
         "ip": "*",
         "hostname": "*",
         "avg_rtt_ms": null,
@@ -186,17 +186,17 @@
       "udp": {
         "hop": 8,
         "protocol": "udp",
-        "ip": "103.22.201.87",
-        "hostname": "103.22.201.87",
-        "avg_rtt_ms": 39.18,
+        "ip": "103.22.201.123",
+        "hostname": "103.22.201.123",
+        "avg_rtt_ms": 47.15,
         "loss_pct": 0.0
       },
       "tcp": {
         "hop": 8,
         "protocol": "tcp",
-        "ip": "103.22.201.29",
-        "hostname": "103.22.201.29",
-        "avg_rtt_ms": 46.52,
+        "ip": "103.22.201.21",
+        "hostname": "103.22.201.21",
+        "avg_rtt_ms": 50.89,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -204,7 +204,7 @@
         "protocol": "icmp",
         "ip": "103.22.201.123",
         "hostname": "103.22.201.123",
-        "avg_rtt_ms": 50.03,
+        "avg_rtt_ms": 49.21,
         "loss_pct": 0.0
       }
     },
@@ -214,7 +214,7 @@
         "protocol": "udp",
         "ip": "1.1.1.1",
         "hostname": "one.one.one.one",
-        "avg_rtt_ms": 42.39,
+        "avg_rtt_ms": 50.69,
         "loss_pct": 0.0
       },
       "icmp": {
@@ -222,7 +222,7 @@
         "protocol": "icmp",
         "ip": "1.1.1.1",
         "hostname": "one.one.one.one",
-        "avg_rtt_ms": 34.1,
+        "avg_rtt_ms": 48.68,
         "loss_pct": 0.0
       }
     }

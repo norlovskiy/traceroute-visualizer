@@ -86,11 +86,11 @@ Silent hops are recorded as `"ip": "*"` with `"loss_pct": 100.0`.
 
 ## Visualizer
 
-`topology (1).html` is a self-contained D3 force-directed graph. Each node is a router; edges are colour-coded by protocol (UDP = blue, TCP = red, ICMP = green). Link length scales with RTT; dashed lines indicate packet loss.
+`topology.html` is a self-contained D3 force-directed graph. Each node is a router; edges are colour-coded by protocol (UDP = blue, TCP = red, ICMP = green). Link length scales with RTT; dashed lines indicate packet loss.
 
 **Two ways to open it:**
 
-1. Pass `--open` to the CLI — the tool writes a standalone `<output>.html` with results embedded and opens it automatically.
+1. Pass `--open` to the CLI — the tool writes a standalone `<output>.html` with results embedded and opens it automatically. NOTE FOR LINUX USERS: web browser will not open in sudo mode, so just open `<output>.html` manually.
 2. Open `topology.html` directly in a browser and use **Load results.json** to load any saved output file.
 
 Click a node to see per-protocol RTT and loss in the sidebar.

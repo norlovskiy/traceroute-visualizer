@@ -325,7 +325,7 @@ def launch_visualizer(results: dict, json_path: Path) -> None:
     )
     html = html.replace(_AUTOLOAD_MARKER, injected)
 
-    viz_path = json_path.with_suffix(".html")
+    viz_path = json_path.with_suffix(".html").resolve()
     viz_path.write_text(html, encoding="utf-8")
 
     webbrowser.open(viz_path.as_uri())

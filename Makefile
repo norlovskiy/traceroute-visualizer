@@ -1,23 +1,32 @@
-PYTHON     ?= python3
 TARGETS    ?= targets.txt
 OUTPUT     ?= run.json
-ARGS       ?= -f 1 -m 30 -q 1 -w 0.05 -s 60
+ARGS       ?= -f 1 -m 15
 
-## Default target — run the analyzer (requires root for raw sockets)
+ifeq ($(OS),Windows_NT)
+    PYTHON ?= python
+    SUDO   :=
+    RM     := del /f /q
+else
+    PYTHON ?= python3
+    SUDO   := sudo
+    RM     := rm -f
+endif
+
+## Default target — run the analyzer (requires elevated privileges for raw sockets)
 run:
-	sudo $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) $(ARGS)
+	$(SUDO) $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) $(ARGS)
 
 ## Run with verbose logging
 run-verbose:
-	sudo $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) -v $(ARGS)
+	$(SUDO) $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) -v $(ARGS)
 
 ## Run and open the topology visualizer when done
 run-open:
-	sudo $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) --open $(ARGS)
+	$(SUDO) $(PYTHON) traceroute_main.py $(TARGETS) -o $(OUTPUT) --open $(ARGS)
 
 ## Remove output files
 clean:
-	rm -f run.json traceroute_*.json out.json out.csv
+	-$(RM) run.json traceroute_*.json out.json out.csv
 
 help:
 	@echo "Targets:"
@@ -30,3 +39,9 @@ help:
 	@echo "  TARGETS   Input file  (default: targets.txt)"
 	@echo "  OUTPUT    Output file (default: run.json)"
 	@echo "  ARGS      Extra flags (e.g. ARGS='-q 2 -m 20')"
+	@echo ""
+ifeq ($(OS),Windows_NT)
+	@echo "Note: Run this shell as Administrator for raw socket access."
+else
+	@echo "Note: sudo is used automatically for raw socket access."
+endif

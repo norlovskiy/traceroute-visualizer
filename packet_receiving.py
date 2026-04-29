@@ -1,3 +1,4 @@
+import platform
 import socket
 import time
 import threading
@@ -112,11 +113,17 @@ def _on_icmp_packet(pkt):
 
 def _listen():
     try:
+        # On Windows/macOS, Scapy uses Npcap/BPF and sniffs per-interface.
+        # Explicitly bind to the same interface the sender uses (set by
+        # init_sender → _prime_gateway_arp) so responses aren't missed when
+        # the machine has multiple adapters (VPN, VMware, WSL, etc.).
+        iface = conf.iface if platform.system() != "Linux" else None
         sniffer = AsyncSniffer(
             filter="icmp",
             store=False,
             prn=_on_icmp_packet,
             started_callback=_sniffer_ready.set,
+            **({"iface": iface} if iface else {}),
         )
         sniffer.start()
         sniffer.join()

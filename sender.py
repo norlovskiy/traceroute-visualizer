@@ -1,5 +1,7 @@
 import os
 import platform
+import re
+import subprocess
 import time
 import random
 import itertools
@@ -19,8 +21,28 @@ def _prime_gateway_arp():
     try:
         iface, _, gw = conf.route.route("0.0.0.0")
         conf.iface = iface
-        if gw and gw != "0.0.0.0":
-            getmacbyip(gw)  # sends ARP; Scapy caches the result automatically
+        if not gw or gw == "0.0.0.0":
+            return
+        mac = getmacbyip(gw)
+        if mac:
+            return  # Scapy's ARP succeeded; cache is warm
+        # getmacbyip() can fail on Windows/macOS when Npcap/BPF doesn't
+        # capture the ARP reply in time. Fall back to the OS ARP table,
+        # which is always populated for the default gateway once the
+        # machine has an active internet connection.
+        if platform.system() == "Windows":
+            out = subprocess.check_output(
+                ["arp", "-a", gw], text=True, timeout=3,
+                stderr=subprocess.DEVNULL,
+            )
+        else:  # macOS
+            out = subprocess.check_output(
+                ["arp", "-n", gw], text=True, timeout=3,
+                stderr=subprocess.DEVNULL,
+            )
+        m = re.search(r"([\da-fA-F]{1,2}[:\-]){5}[\da-fA-F]{1,2}", out)
+        if m:
+            conf.netcache.arp_cache[gw] = m.group(0).replace("-", ":").lower()
     except Exception:
         pass
 

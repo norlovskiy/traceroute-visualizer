@@ -1,4 +1,5 @@
 import os
+import platform
 import time
 import random
 import itertools
@@ -11,6 +12,12 @@ _seq_counter = itertools.count(start=1)
 
 def init_sender():
     conf.verb = 0
+    if platform.system() == "Windows":
+        # On Windows, Scapy (Npcap) sends at L2 and needs an explicit interface
+        # to resolve the default-gateway MAC. Without this, MAC resolution fails
+        # and all probes are dropped before leaving the host.
+        iface, _, _ = conf.route.route("0.0.0.0")
+        conf.iface = iface
 
 
 def craft_icmp_probe(dst_ip: str, ttl: int, seq: int, size: int = 60):

@@ -39,7 +39,7 @@ def send_series(
     packet_size: int = 60,
 ):
     for _ in range(num_series):
-        # UDP — register before send so a sub-ms LAN reply never races the table write
+        # UDP
         src_port_udp = random.randint(49152, 65535)
         pkt = craft_udp_probe(destination_ip, current_ttl, udp_port, src_port_udp, packet_size)
         active_probes[("udp", src_port_udp)] = {

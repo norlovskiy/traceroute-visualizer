@@ -10,14 +10,25 @@ _ICMP_ID = os.getpid() & 0xFFFF
 _seq_counter = itertools.count(start=1)
 
 
+def _prime_gateway_arp():
+    # On Windows/macOS, Scapy sends at L2 via Npcap/BPF and must resolve the
+    # gateway MAC itself. Without a warm ARP cache it warns and falls back to
+    # broadcast, which routers silently drop. Linux uses kernel raw sockets so
+    # the kernel handles ARP and this step is unnecessary.
+    from scapy.all import getmacbyip
+    try:
+        iface, _, gw = conf.route.route("0.0.0.0")
+        conf.iface = iface
+        if gw and gw != "0.0.0.0":
+            getmacbyip(gw)  # sends ARP; Scapy caches the result automatically
+    except Exception:
+        pass
+
+
 def init_sender():
     conf.verb = 0
-    if platform.system() == "Windows":
-        # On Windows, Scapy (Npcap) sends at L2 and needs an explicit interface
-        # to resolve the default-gateway MAC. Without this, MAC resolution fails
-        # and all probes are dropped before leaving the host.
-        iface, _, _ = conf.route.route("0.0.0.0")
-        conf.iface = iface
+    if platform.system() != "Linux":
+        _prime_gateway_arp()
 
 
 def craft_icmp_probe(dst_ip: str, ttl: int, seq: int, size: int = 60):
